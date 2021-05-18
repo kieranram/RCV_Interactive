@@ -19,7 +19,9 @@ app.layout = html.Div(children=[
     dash_table.DataTable(
         id = 'show_cands', 
         columns = [{'name' : i, 'id' : i} for i in df_cols], 
-        data = [{'Candidate_Name' : 'test', 'Candidate_Party' : 'test', 'Candidate_ID' : 'test1'}]
+        data = [{'Candidate_Name' : 'Example Candidate', 
+                'Candidate_Party' : 'Example Party', 
+                'Candidate_ID' : '0'}]
     ), 
     
     html.Div([
@@ -27,17 +29,45 @@ app.layout = html.Div(children=[
         html.Br(),
         dcc.Input(id = 'cand_party', type = 'text', placeholder = 'New Candidate Party'),
         html.Br(),
-        html.Button('Update Text', id='button-2'), 
+        html.Button('Add Candidate', id='cand-button'), 
         html.Br()
-    ]),
+    ]), 
+    html.Br(), 
+
+    html.Div('Ballots: '),
+    dash_table.DataTable(
+        id = 'show_ballots', 
+        columns = [{'name' : i, 'id' : i} for i in range(1, 6)], 
+        data = [{1 : 'First Choice', 
+                 2 : 'Second Choice', 
+                 3 : 'Third Choice', 
+                 4 : 'Fourth Choice', 
+                 5 : 'Fifth Choice'}]
+    ), 
     
+    html.Div([
+        dcc.Dropdown(id = 'new_first', placeholder = 'Enter First Choice'),
+        html.Br(),
+        dcc.Dropdown(id = 'new_second', placeholder = 'Enter Second Choice'),
+        html.Br(),
+        dcc.Dropdown(id = 'new_third', placeholder = 'Enter Third Choice'),
+        html.Br(),
+        dcc.Dropdown(id = 'new_fourth', placeholder = 'Enter Fourth Choice'),
+        html.Br(),
+        dcc.Dropdown(id = 'new_fifth', placeholder = 'Enter Fifth Choice'),
+        html.Br(),
+        html.Button('Add Ballot', id='ballot_button'), 
+        html.Br()
+    ]), 
+    html.Br(),
+
     dcc.Store(id = 'candidates'), 
     dcc.Store(id = 'ballots')
 ])
 
 @app.callback(
     Output('candidates', 'data'),
-    Input('button-2', 'n_clicks'),
+    Input('cand-button', 'n_clicks'),
     State('cand_name', 'value'),
     State('cand_party', 'value'), 
     State('candidates', 'data')
@@ -69,7 +99,6 @@ def update_candidates(cands, tbl_cands):
         return tbl_cands
 
     new_cands = pd.read_json(cands, orient = 'index').to_dict('records')
-    
     return new_cands
 
 if __name__ == '__main__':
