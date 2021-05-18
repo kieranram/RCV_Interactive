@@ -23,6 +23,7 @@ app.layout = html.Div(children=[
                 'Candidate_Party' : 'Example Party', 
                 'Candidate_ID' : '0'}]
     ), 
+    html.Br(),
     
     html.Div([
         dcc.Input(id = 'cand_name', type = 'text', placeholder = 'New Candidate Name'),
@@ -44,18 +45,15 @@ app.layout = html.Div(children=[
                  4 : 'Fourth Choice', 
                  5 : 'Fifth Choice'}]
     ), 
+
+    html.Br(),
     
     html.Div([
-        dcc.Dropdown(id = 'new_first', placeholder = 'Enter First Choice'),
-        html.Br(),
-        dcc.Dropdown(id = 'new_second', placeholder = 'Enter Second Choice'),
-        html.Br(),
-        dcc.Dropdown(id = 'new_third', placeholder = 'Enter Third Choice'),
-        html.Br(),
-        dcc.Dropdown(id = 'new_fourth', placeholder = 'Enter Fourth Choice'),
-        html.Br(),
-        dcc.Dropdown(id = 'new_fifth', placeholder = 'Enter Fifth Choice'),
-        html.Br(),
+        dcc.Dropdown(id = 'first_choice', placeholder = 'Enter First Choice'),
+        dcc.Dropdown(id = 'second_choice', placeholder = 'Enter Second Choice'),
+        dcc.Dropdown(id = 'third_choice', placeholder = 'Enter Third Choice'),
+        dcc.Dropdown(id = 'fourth_choice', placeholder = 'Enter Fourth Choice'),
+        dcc.Dropdown(id = 'fifth_choice', placeholder = 'Enter Fifth Choice'),
         html.Button('Add Ballot', id='ballot_button'), 
         html.Br()
     ]), 
@@ -100,6 +98,22 @@ def update_candidates(cands, tbl_cands):
 
     new_cands = pd.read_json(cands, orient = 'index').to_dict('records')
     return new_cands
+
+@app.callback(
+    Output('first_choice', 'options'), 
+    Output('second_choice', 'options'), 
+    Output('third_choice', 'options'),
+    Output('fourth_choice', 'options'), 
+    Output('fifth_choice', 'options'),
+    Input('candidates', 'data')
+)
+def update_options(cands):
+    if cands is None:
+        return [[] for _ in range(5)]
+    get_opts = lambda x: {'label' : x['Candidate_Name'], 'value' : x['Candidate_ID']}
+    cand_df = pd.read_json(cands, orient = 'index')
+    all_opts = cand_df.apply(get_opts, axis = 1).tolist()
+    return [all_opts for _ in range(5)]
 
 if __name__ == '__main__':
     app.run_server()
