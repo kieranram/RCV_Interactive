@@ -60,7 +60,8 @@ app.layout = html.Div(children=[
     ballot_table, 
 
     dcc.Store(id = 'candidates'), 
-    dcc.Store(id = 'ballots')
+    dcc.Store(id = 'ballots'), 
+    dcc.Store(id = 'rounds')
 ])
 
 @app.callback(
@@ -226,6 +227,22 @@ def activate_fifth(choice, curr):
         return True, None
     else:
         return False, curr
+
+@app.callback(
+    Output('rounds', 'data'), 
+    Input('ballots', 'data'), 
+    Input('candidates', 'data')
+)
+def tabulate_votes(ballots, candidates):
+    mapper = {'First Choice' : 1, 'Second Choice' : 2, 'Third Choice' : 3, 'Fourth Choice' : 4, 'Fifth Choice' : 5}
+
+    ballot_df = pd.read_json(ballots, orient = 'index')
+    candidate_df = pd.read_json(candidates, orient = 'index')
+
+    long_ballots = ballot_df.melt(id_vars = ['Ballot_ID'], var_name = 'Choice', value_name = 'Candidate')
+    long_ballots.loc[:, 'Numeric_Choice'] = long_ballots['Choice'].map(mapper)
+    print(long_ballots, '\n\n', candidate_df)
+    return None
 
 if __name__ == '__main__':
     app.run_server()
