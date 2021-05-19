@@ -10,52 +10,54 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
-candidate_cols = ['Candidate_Name', 'Candidate_Party', 'Candidate_ID']
+candidate_cols = ['Candidate_ID', 'Candidate_Name', 'Candidate_Party']
 ballot_cols = ['Ballot_ID', 'First Choice', 'Second Choice', 'Third Choice', 'Fourth Choice', 'Fifth Choice']
+
+candidate_form = html.Div([
+                    dcc.Input(id = 'cand_name', type = 'text', placeholder = 'New Candidate Name'),
+                    dcc.Input(id = 'cand_party', type = 'text', placeholder = 'New Candidate Party'),
+                    html.Button('Add Candidate', id='cand-button'), 
+                    html.Br()
+                ], style = {'float' : 'left', 'width' : '40%'})
+
+ballot_form = html.Div([
+                dcc.Dropdown(id = 'first_choice', placeholder = 'Enter First Choice'),
+                dcc.Dropdown(id = 'second_choice', placeholder = 'Enter Second Choice'),
+                dcc.Dropdown(id = 'third_choice', placeholder = 'Enter Third Choice'),
+                dcc.Dropdown(id = 'fourth_choice', placeholder = 'Enter Fourth Choice'),
+                dcc.Dropdown(id = 'fifth_choice', placeholder = 'Enter Fifth Choice'),
+                html.Button('Add Ballot', id='ballot_button'), 
+                html.Br()
+            ], style = {'width' : '40%'})
+
+candidate_table = dash_table.DataTable(
+                    id = 'show_cands', 
+                    columns = [{'name' : i, 'id' : i} for i in candidate_cols], 
+                    data = [{'Candidate_Name' : 'Example Candidate', 
+                            'Candidate_Party' : 'Example Party', 
+                            'Candidate_ID' : '0'}]
+                    )
+
+ballot_table = dash_table.DataTable(
+                id = 'show_ballots', 
+                columns = [{'name' : x, 'id' : x} for x in ballot_cols], 
+                data = [{x : x for x in ballot_cols}]
+            )
 
 app.layout = html.Div(children=[
     html.H3('Create an interactive Ranked Choice Voting election!'),
     html.Br(),
-
+    
+    candidate_form,
+    html.Br(), html.Br(),
     html.Div('Candidates: '),
-    dash_table.DataTable(
-        id = 'show_cands', 
-        columns = [{'name' : i, 'id' : i} for i in candidate_cols], 
-        data = [{'Candidate_Name' : 'Example Candidate', 
-                'Candidate_Party' : 'Example Party', 
-                'Candidate_ID' : '0'}]
-    ), 
+    candidate_table, 
     html.Br(),
-    
-    html.Div([
-        dcc.Input(id = 'cand_name', type = 'text', placeholder = 'New Candidate Name'),
-        html.Br(),
-        dcc.Input(id = 'cand_party', type = 'text', placeholder = 'New Candidate Party'),
-        html.Br(),
-        html.Button('Add Candidate', id='cand-button'), 
-        html.Br()
-    ]), 
-    html.Br(), 
 
+    ballot_form, 
+    html.Br(),
     html.Div('Ballots: '),
-    dash_table.DataTable(
-        id = 'show_ballots', 
-        columns = [{'name' : x, 'id' : x} for x in ballot_cols], 
-        data = [{x : x for x in ballot_cols}]
-    ), 
-
-    html.Br(),
-    
-    html.Div([
-        dcc.Dropdown(id = 'first_choice', placeholder = 'Enter First Choice'),
-        dcc.Dropdown(id = 'second_choice', placeholder = 'Enter Second Choice'),
-        dcc.Dropdown(id = 'third_choice', placeholder = 'Enter Third Choice'),
-        dcc.Dropdown(id = 'fourth_choice', placeholder = 'Enter Fourth Choice'),
-        dcc.Dropdown(id = 'fifth_choice', placeholder = 'Enter Fifth Choice'),
-        html.Button('Add Ballot', id='ballot_button'), 
-        html.Br()
-    ]), 
-    html.Br(),
+    ballot_table, 
 
     dcc.Store(id = 'candidates'), 
     dcc.Store(id = 'ballots')
@@ -154,6 +156,8 @@ def update_ballots(ballots, tbl_ballots, cands):
     new_ballots = pd.read_json(ballots, orient = 'index')
 
     for col in ballot_cols:
+        if col == 'Ballot_ID': 
+            continue
         new_ballots.loc[:, col] = new_ballots[col].map(cand_map)
 
     return new_ballots.to_dict('records')
