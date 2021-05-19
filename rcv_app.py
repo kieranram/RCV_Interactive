@@ -22,10 +22,10 @@ candidate_form = html.Div([
 
 ballot_form = html.Div([
                 dcc.Dropdown(id = 'first_choice', placeholder = 'Enter First Choice'),
-                dcc.Dropdown(id = 'second_choice', placeholder = 'Enter Second Choice'),
-                dcc.Dropdown(id = 'third_choice', placeholder = 'Enter Third Choice'),
-                dcc.Dropdown(id = 'fourth_choice', placeholder = 'Enter Fourth Choice'),
-                dcc.Dropdown(id = 'fifth_choice', placeholder = 'Enter Fifth Choice'),
+                dcc.Dropdown(id = 'second_choice', placeholder = 'Enter Second Choice', disabled = True),
+                dcc.Dropdown(id = 'third_choice', placeholder = 'Enter Third Choice', disabled = True),
+                dcc.Dropdown(id = 'fourth_choice', placeholder = 'Enter Fourth Choice', disabled = True),
+                dcc.Dropdown(id = 'fifth_choice', placeholder = 'Enter Fifth Choice', disabled = True),
                 html.Button('Add Ballot', id='ballot_button'), 
                 html.Br()
             ], style = {'width' : '40%'})
@@ -171,12 +171,53 @@ def update_ballots(ballots, tbl_ballots, cands):
     Input('candidates', 'data')
 )
 def update_options(cands):
+    # On load, no options available
     if cands is None:
         return [[] for _ in range(5)]
     get_opts = lambda x: {'label' : x['Candidate_Name'], 'value' : x['Candidate_ID']}
     cand_df = pd.read_json(cands, orient = 'index')
     all_opts = cand_df.apply(get_opts, axis = 1).tolist()
     return [all_opts for _ in range(5)]
+
+@app.callback(
+    Output('second_choice', 'disabled'), 
+    Input('first_choice', 'value')
+)
+def activate_second(choice):
+    if choice is None:
+        return True
+    else:
+        return False
+
+@app.callback(
+    Output('third_choice', 'disabled'),
+    Input('second_choice', 'value')
+)
+def activate_third(choice):
+    if choice is None:
+        return True
+    else:
+        return False
+
+@app.callback(
+    Output('fourth_choice', 'disabled'),
+    Input('third_choice', 'value')
+)
+def activate_fourth(choice):
+    if choice is None:
+        return True
+    else:
+        return False
+
+@app.callback(
+    Output('fifth_choice', 'disabled'),
+    Input('fourth_choice', 'value')
+)
+def activate_fifth(choice):
+    if choice is None:
+        return True
+    else:
+        return False
 
 if __name__ == '__main__':
     app.run_server()
