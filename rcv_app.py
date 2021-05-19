@@ -180,44 +180,52 @@ def update_options(cands):
     return [all_opts for _ in range(5)]
 
 @app.callback(
-    Output('second_choice', 'disabled'), 
-    Input('first_choice', 'value')
+    Output('second_choice', 'disabled'),
+    Output('second_choice', 'value'),
+    Input('first_choice', 'value'),
+    State('second_choice', 'value')
 )
-def activate_second(choice):
+def activate_second(choice, curr):
     if choice is None:
-        return True
+        return True, None
     else:
-        return False
+        return False, curr
 
 @app.callback(
     Output('third_choice', 'disabled'),
-    Input('second_choice', 'value')
+    Output('third_choice', 'value'),
+    Input('second_choice', 'value'),
+    State('third_choice', 'value')
 )
-def activate_third(choice):
+def activate_third(choice, curr):
     if choice is None:
-        return True
+        return True, None
     else:
-        return False
+        return False, curr
 
 @app.callback(
     Output('fourth_choice', 'disabled'),
-    Input('third_choice', 'value')
+    Output('fourth_choice', 'value'),
+    Input('third_choice', 'value'),
+    State('fourth_choice', 'value')
 )
-def activate_fourth(choice):
+def activate_fourth(choice, curr):
     if choice is None:
-        return True
+        return True, None
     else:
-        return False
+        return False, curr
 
 @app.callback(
     Output('fifth_choice', 'disabled'),
-    Input('fourth_choice', 'value')
+    Output('fifth_choice', 'value'),
+    Input('fourth_choice', 'value'),
+    State('fifth_choice', 'value')
 )
-def activate_fifth(choice):
+def activate_fifth(choice, curr):
     if choice is None:
-        return True
+        return True, None
     else:
-        return False
+        return False, curr
 
 if __name__ == '__main__':
     app.run_server()
