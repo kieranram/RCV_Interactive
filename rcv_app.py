@@ -270,7 +270,6 @@ def update_sankey(rounds, cands):
     if rounds is None:
         return go.Figure()
     all_rounds = pd.read_json(rounds, orient = 'index')
-    print(all_rounds)
     
     fig = go.Figure(data=[go.Sankey(
         node = dict(
