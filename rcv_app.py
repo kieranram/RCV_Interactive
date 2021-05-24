@@ -257,33 +257,41 @@ def tabulate_votes(ballots, candidates):
     rounds, shares = iterate_series(long_ballots[['Ballot_ID', 'Candidate', 'Numeric_Choice']]
                             .rename(columns = {'Numeric_Choice' : 'Rank'}))
     rounds = rounds.dropna(subset = ['Candidate'])
-    all_rounds, by_round = make_rounds(rounds, shares)
+    progression, by_round = make_rounds(rounds, shares)
     
-    return all_rounds[['Start_Ind', 'End_Ind', 'Number']].to_json(orient = 'index'), by_round['CR'].tolist()
+    return progression[['Start_Ind', 'End_Ind', 'Number']].to_json(orient = 'index'), by_round.to_json(orient = 'index')
 
 @app.callback(
     Output('sankey', 'figure'),
     Input('rounds', 'data'), 
-    State('cand_order', 'data')
+    State('cand_order', 'data'), 
+    State('candidates', 'data')
 )
-def update_sankey(rounds, cands):
+def update_sankey(rounds, round_avgs, cand_json):
     if rounds is None:
         return go.Figure()
-    all_rounds = pd.read_json(rounds, orient = 'index')
+    progression = pd.read_json(rounds, orient = 'index')
+    by_round = pd.read_json(round_avgs, orient = 'index')
+    candidates = pd.read_json(cand_json, orient = 'index')
+
+    get_label = lambda x: f'Candidate: {x["Candidate_Name"]} <br> Round : {x["Round"]}'
+    by_round = by_round.merge(candidates, left_on = 'Candidate', right_on = 'Candidate_ID', how = 'left')
+    by_round.loc[:, 'Label'] = by_round.apply(get_label, axis = 1)
     
     fig = go.Figure(data=[go.Sankey(
         node = dict(
-        pad = 15,
-        thickness = 20,
-        line = dict(color = "black", width = 0.5),
-        label = cands,
-        color = "blue"
+            pad = 15,
+            thickness = 20,
+            line = dict(color = "black", width = 0.5),
+            label = by_round['Label'].tolist(), 
+            x = (by_round['Round'] - 1).tolist()
         ),
         link = dict(
-        source = all_rounds['Start_Ind'].tolist(),
-        target = all_rounds['End_Ind'].tolist(),
-        value = all_rounds['Number'].tolist()
-    ))])
+            source = progression['Start_Ind'].tolist(),
+            target = progression['End_Ind'].tolist(),
+            value = progression['Number'].tolist()
+        ))]
+    )
     return fig
 
 if __name__ == '__main__':
