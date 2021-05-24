@@ -5,6 +5,10 @@ import dash_table
 from dash.dependencies import Input, Output, State
 import plotly.express as px
 import pandas as pd
+import plotly.graph_objects as go
+
+
+from rcv_helpers import *
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -58,10 +62,15 @@ app.layout = html.Div(children=[
     html.Br(),
     html.Div('Ballots: '),
     ballot_table, 
+    html.Br(),
+    html.Br(),
+    html.Div('Sankey of Rounds: '),
+    dcc.Graph(id = 'sankey'),
 
     dcc.Store(id = 'candidates'), 
     dcc.Store(id = 'ballots'), 
-    dcc.Store(id = 'rounds')
+    dcc.Store(id = 'rounds'), 
+    dcc.Store(id = 'cand_order')
 ])
 
 @app.callback(
@@ -230,10 +239,13 @@ def activate_fifth(choice, curr):
 
 @app.callback(
     Output('rounds', 'data'), 
+    Output('cand_order', 'data'),
     Input('ballots', 'data'), 
-    Input('candidates', 'data')
+    State('candidates', 'data')
 )
 def tabulate_votes(ballots, candidates):
+    if (candidates is None) or (ballots is None):
+        return None, None
     mapper = {'First Choice' : 1, 'Second Choice' : 2, 'Third Choice' : 3, 'Fourth Choice' : 4, 'Fifth Choice' : 5}
 
     ballot_df = pd.read_json(ballots, orient = 'index')
@@ -241,8 +253,39 @@ def tabulate_votes(ballots, candidates):
 
     long_ballots = ballot_df.melt(id_vars = ['Ballot_ID'], var_name = 'Choice', value_name = 'Candidate')
     long_ballots.loc[:, 'Numeric_Choice'] = long_ballots['Choice'].map(mapper)
-    print(long_ballots, '\n\n', candidate_df)
-    return None
+    
+    rounds, shares = iterate_series(long_ballots[['Ballot_ID', 'Candidate', 'Numeric_Choice']]
+                            .rename(columns = {'Numeric_Choice' : 'Rank'}))
+    rounds = rounds.dropna(subset = ['Candidate'])
+    all_rounds, by_round = make_rounds(rounds, shares)
+    
+    return all_rounds[['Start_Ind', 'End_Ind', 'Number']].to_json(orient = 'index'), by_round['CR'].tolist()
+
+@app.callback(
+    Output('sankey', 'figure'),
+    Input('rounds', 'data'), 
+    State('cand_order', 'data')
+)
+def update_sankey(rounds, cands):
+    if rounds is None:
+        return go.Figure()
+    all_rounds = pd.read_json(rounds, orient = 'index')
+    print(all_rounds)
+    
+    fig = go.Figure(data=[go.Sankey(
+        node = dict(
+        pad = 15,
+        thickness = 20,
+        line = dict(color = "black", width = 0.5),
+        label = cands,
+        color = "blue"
+        ),
+        link = dict(
+        source = all_rounds['Start_Ind'].tolist(),
+        target = all_rounds['End_Ind'].tolist(),
+        value = all_rounds['Number'].tolist()
+    ))])
+    return fig
 
 if __name__ == '__main__':
-    app.run_server()
+    app.run_server(host='127.0.0.1', port='8050', debug=True)
