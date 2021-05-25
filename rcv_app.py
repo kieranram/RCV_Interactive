@@ -274,7 +274,18 @@ def update_sankey(rounds, round_avgs, cand_json):
     by_round = pd.read_json(round_avgs, orient = 'index')
     candidates = pd.read_json(cand_json, orient = 'index')
 
-    get_label = lambda x: f'Candidate: {x["Candidate_Name"]} <br> Round : {x["Round"]}'
+    candidates['Group_Num'] = candidates.groupby('Candidate_Party').cumcount() + 1
+    candidates['alpha'] = candidates['Group_Num']/candidates['Candidate_Party'].map(candidates.groupby('Candidate_Party')['Candidate_ID'].count())
+
+    colors = ((255, 0, 0), (0, 255, 0), (0, 0, 255))
+    parties = candidates['Candidate_Party'].unique()
+    col_map = {x : colors[i % 3] for i, x in enumerate(parties)}
+    candidates['color'] = candidates['Candidate_Party'].map(col_map)
+
+    get_col_string = lambda x: f'rgba({x["color"][0]}, {x["color"][1]}, {x["color"][2]}, {x["alpha"]})'
+    candidates['color_str'] = candidates.apply(get_col_string, axis = 1)
+
+    get_label = lambda x: f'Candidate: {x["Candidate_Name"]}, Round : {x["Round"]}'
     by_round = by_round.merge(candidates, left_on = 'Candidate', right_on = 'Candidate_ID', how = 'left')
     by_round.loc[:, 'Label'] = by_round.apply(get_label, axis = 1)
     
@@ -284,7 +295,8 @@ def update_sankey(rounds, round_avgs, cand_json):
             thickness = 20,
             line = dict(color = "black", width = 0.5),
             label = by_round['Label'].tolist(), 
-            x = (by_round['Round'] - 1).tolist()
+            x = (by_round['Round'] - 1).tolist(), 
+            color = by_round['color_str']
         ),
         link = dict(
             source = progression['Start_Ind'].tolist(),
