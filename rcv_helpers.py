@@ -16,6 +16,8 @@ def remove_lowest(data):
     drops = first_counts[first_counts == lowest_count].index.tolist()
     
     keeps = data.query('Candidate != @drops')['Candidate'].unique().tolist()
+    if len(keeps) == 0:
+        return data
     
     data = promote(data, keeps)
     
@@ -78,10 +80,10 @@ def make_rounds(rcv, shares):
     all_rounds = all_rounds.reset_index(drop = True)
     
     all_rounds.loc[:, 'Start_Ind'] = all_rounds.merge(by_round, left_on = ['Start', 'Start_Round'], 
-                                                  right_on = ['Candidate', 'Round'], how = 'left')['Order']
+                                                  right_on = ['Candidate', 'Round'], how = 'left')['Order'].values
     all_rounds.loc[:, 'End_Ind'] = all_rounds.merge(by_round, left_on = ['End', 'End_Round'], 
-                                                  right_on = ['Candidate', 'Round'], how = 'left')['Order']
+                                                  right_on = ['Candidate', 'Round'], how = 'left')['Order'].values
     
-    all_rounds.to_csv('all_rounds.csv')
-    by_round.to_csv('by_round.csv')
+    all_rounds.to_csv('all_rounds.csv', index = False)
+    by_round.to_csv('by_round.csv', index = False)
     return all_rounds, by_round

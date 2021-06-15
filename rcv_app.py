@@ -252,12 +252,13 @@ def tabulate_votes(ballots, candidates):
     candidate_df = pd.read_json(candidates, orient = 'index')
 
     long_ballots = ballot_df.melt(id_vars = ['Ballot_ID'], var_name = 'Choice', value_name = 'Candidate')
-    long_ballots.loc[:, 'Numeric_Choice'] = long_ballots['Choice'].map(mapper)
+    long_ballots.loc[:, 'Rank'] = long_ballots['Choice'].map(mapper)
     
-    rounds, shares = iterate_series(long_ballots[['Ballot_ID', 'Candidate', 'Numeric_Choice']]
-                            .rename(columns = {'Numeric_Choice' : 'Rank'}))
+    rounds, shares = iterate_series(long_ballots[['Ballot_ID', 'Candidate', 'Rank']])
     rounds = rounds.dropna(subset = ['Candidate'])
     progression, by_round = make_rounds(rounds, shares)
+    print(progression)
+    print()
     
     return progression[['Start_Ind', 'End_Ind', 'Number']].to_json(orient = 'index'), by_round.to_json(orient = 'index')
 
