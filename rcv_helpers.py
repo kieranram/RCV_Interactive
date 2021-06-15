@@ -17,7 +17,7 @@ def remove_lowest(data):
     
     keeps = data.query('Candidate != @drops')['Candidate'].unique().tolist()
     if len(keeps) == 0:
-        return data
+        return None
     
     data = promote(data, keeps)
     
@@ -39,6 +39,8 @@ def iterate_series(data):
     while len(data['Candidate'].unique()) > 1:
         r += 1
         data = remove_lowest(data)
+        if data is None:
+            break
         this_round = data.copy()
         this_round.loc[:, 'Round'] = r
         rounds = rounds.append(this_round)
@@ -52,7 +54,6 @@ def iterate_series(data):
     return rounds, vote_shares
 
 def make_rounds(rcv, shares):
-    
     by_round = shares.sort_values(['Round', 'n_ballots'], ascending = [True, False]).reset_index(drop = True)
     
     get_cr = lambda x: f'Candidate : {x["Candidate"]}\nRound : {x["Round"]}'
